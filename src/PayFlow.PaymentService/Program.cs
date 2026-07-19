@@ -1,10 +1,20 @@
+using Microsoft.EntityFrameworkCore;
+using PayFlow.PaymentService.Data;
+using StackExchange.Redis;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+
 
 builder.Services.AddControllers();
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
+builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddOpenApi();
+
+builder.Services.AddDbContext<PaymentDbContext>(options =>
+ options.UseSqlServer("Server=localhost,1433;Database=PayFlowDb;User Id=sa;Password=YourStrong@Passw0rd;TrustServerCertificate=True"));
+
+builder.Services.AddSingleton<IConnectionMultiplexer>(
+    ConnectionMultiplexer.Connect("localhost:6379"));
 
 var app = builder.Build();
 
