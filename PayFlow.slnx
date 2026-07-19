@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="src/PayFlow.PaymentService/PayFlow.PaymentService.csproj" />
+  <Project Path="src/PayFlow.Shared/PayFlow.Shared.csproj" />
+</Solution>
