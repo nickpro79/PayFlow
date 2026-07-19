@@ -1,5 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using PayFlow.PaymentService.Data;
+using PayFlow.PaymentService.Repositories;
+using PayFlow.Shared;
 using StackExchange.Redis;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -16,6 +18,7 @@ builder.Services.AddDbContext<PaymentDbContext>(options =>
 builder.Services.AddSingleton<IConnectionMultiplexer>(
     ConnectionMultiplexer.Connect("localhost:6379"));
 
+builder.Services.AddScoped<IPaymentRepository, PaymentRepository>();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
