@@ -1,7 +1,9 @@
 using Microsoft.EntityFrameworkCore;
 using PayFlow.PaymentService.Data;
+using PayFlow.PaymentService.Messaging;
 using PayFlow.PaymentService.Repositories;
 using PayFlow.Shared;
+using PayFlow.Shared.Messaging;
 using StackExchange.Redis;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -18,6 +20,7 @@ builder.Services.AddDbContext<PaymentDbContext>(options =>
 builder.Services.AddSingleton<IConnectionMultiplexer>(
     ConnectionMultiplexer.Connect("localhost:6379"));
 
+builder.Services.AddSingleton<IEventPublisher, KafkaEventPublisher>();
 builder.Services.AddScoped<IPaymentRepository, PaymentRepository>();
 var app = builder.Build();
 

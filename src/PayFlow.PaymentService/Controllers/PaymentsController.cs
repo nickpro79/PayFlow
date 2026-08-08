@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using PayFlow.Shared;
+using PayFlow.Shared.Events;
+using PayFlow.Shared.Messaging;
 using StackExchange.Redis;
 using System.Text.Json;
 
@@ -12,11 +14,13 @@ namespace PayFlow.PaymentService.Controllers
     {
         private readonly IPaymentRepository _paymentRepository;
         private readonly IConnectionMultiplexer _redis;
+        private readonly IEventPublisher _eventPublisher;
 
-        public PaymentsController(IPaymentRepository paymentRepository, IConnectionMultiplexer redis)
+        public PaymentsController(IPaymentRepository paymentRepository, IConnectionMultiplexer redis, IEventPublisher eventPublisher)
         {
             _paymentRepository = paymentRepository;
             _redis = redis;
+            _eventPublisher = eventPublisher;
         }
 
         public record CreatePaymentRequest(decimal Amount, string Currency);
@@ -55,6 +59,12 @@ namespace PayFlow.PaymentService.Controllers
 
             await cache.StringSetAsync(idempotencyKey, JsonSerializer.Serialize(payment), TimeSpan.FromHours(24));
 
+            await _eventPublisher.PublishAsync("payment-events", new PaymentSucceededEvent
+            {
+                PaymentId = payment.Id,
+                Amount = payment.Amount,
+                Currency = payment.Currency
+            });
             return Ok(payment);
         }
         [HttpGet("{id}")]
