@@ -1,9 +1,11 @@
 using Microsoft.EntityFrameworkCore;
 using PayFlow.PaymentService.Data;
 using PayFlow.PaymentService.Messaging;
+using PayFlow.PaymentService.Processing;
 using PayFlow.PaymentService.Repositories;
 using PayFlow.Shared;
 using PayFlow.Shared.Messaging;
+using PayFlow.Shared.Processing;
 using StackExchange.Redis;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -22,6 +24,9 @@ builder.Services.AddSingleton<IConnectionMultiplexer>(
 
 builder.Services.AddSingleton<IEventPublisher, KafkaEventPublisher>();
 builder.Services.AddScoped<IPaymentRepository, PaymentRepository>();
+builder.Services.AddSingleton<MockPaymentProcessor>();
+builder.Services.AddSingleton<IPaymentProcessor, ResilientPaymentProcessor>();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

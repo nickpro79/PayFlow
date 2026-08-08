@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Mvc;
 using PayFlow.Shared;
 using PayFlow.Shared.Events;
 using PayFlow.Shared.Messaging;
+using PayFlow.Shared.Processing;
+using Polly.CircuitBreaker;
 using StackExchange.Redis;
 using System.Text.Json;
 
@@ -15,12 +17,14 @@ namespace PayFlow.PaymentService.Controllers
         private readonly IPaymentRepository _paymentRepository;
         private readonly IConnectionMultiplexer _redis;
         private readonly IEventPublisher _eventPublisher;
+        private readonly IPaymentProcessor _paymentProcessor;
 
-        public PaymentsController(IPaymentRepository paymentRepository, IConnectionMultiplexer redis, IEventPublisher eventPublisher)
+        public PaymentsController(IPaymentRepository paymentRepository, IConnectionMultiplexer redis, IEventPublisher eventPublisher, IPaymentProcessor paymentProcessor)
         {
             _paymentRepository = paymentRepository;
             _redis = redis;
             _eventPublisher = eventPublisher;
+            _paymentProcessor = paymentProcessor;
         }
 
         public record CreatePaymentRequest(decimal Amount, string Currency);
@@ -52,8 +56,26 @@ namespace PayFlow.PaymentService.Controllers
             await _paymentRepository.SaveChangesAsync();
 
             // Simulate calling an external payment processor
-            await Task.Delay(200);
-            payment.Status = "SUCCESS";
+            try
+            {
+                await _paymentProcessor.ProcessAsync(payment.Amount, payment.Currency);
+                payment.Status = "SUCCESS";
+            }
+            catch (BrokenCircuitException)
+            {
+                payment.Status = "FAILED";
+                await _paymentRepository.UpdateAsync(payment);
+                await _paymentRepository.SaveChangesAsync();
+                return StatusCode(503, new { error = "Payment processor is temporarily unavailable. Please try again shortly." });
+            }
+            catch (PaymentProcessorException)
+            {
+                payment.Status = "FAILED";
+                await _paymentRepository.UpdateAsync(payment);
+                await _paymentRepository.SaveChangesAsync();
+                return StatusCode(502, new { error = "Payment could not be processed after multiple attempts." });
+            }
+
             await _paymentRepository.UpdateAsync(payment);
             await _paymentRepository.SaveChangesAsync();
 
