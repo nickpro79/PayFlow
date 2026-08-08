@@ -1,4 +1,5 @@
 <Solution>
+  <Project Path="src/PayFlow.NotificationService/PayFlow.NotificationService.csproj" Id="2b3853d1-eff2-4359-a7bd-fd1ad424ca0e" />
   <Project Path="src/PayFlow.PaymentService/PayFlow.PaymentService.csproj" />
   <Project Path="src/PayFlow.Shared/PayFlow.Shared.csproj" />
 </Solution>
